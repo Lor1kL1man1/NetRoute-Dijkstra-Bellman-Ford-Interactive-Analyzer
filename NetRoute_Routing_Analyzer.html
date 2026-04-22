@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NetRoute — Dijkstra & Bellman-Ford Interactive Analyzer</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="netroute.css">
+</head>
+<body>
+
+<!-- ════════════════════════════════════════
+     HEADER
+════════════════════════════════════════ -->
+<div id="header">
+  <div class="logo">
+    <span>Lorik's</span>NET-Route Project
+    <div class="logo-sub">Routing Algorithm Analyzer</div>
+  </div>
+  <div class="header-right">
+    <div class="legend">
+      <div class="leg-item"><div class="leg-dot" style="background:var(--blue)"></div>Unvisited</div>
+      <div class="leg-item"><div class="leg-dot" style="background:var(--orange)"></div>Current</div>
+      <div class="leg-item"><div class="leg-dot" style="background:var(--green)"></div>Visited</div>
+      <div class="leg-item"><div class="leg-line" style="background:var(--yellow)"></div>Path</div>
+      <div class="leg-item"><div class="leg-line" style="background:var(--red)"></div>Relaxed</div>
+    </div>
+    <div class="mode-badge edit" id="mode-badge">EDIT MODE</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     MAIN APP
+════════════════════════════════════════ -->
+<div id="app">
+
+  <!-- ── LEFT SIDEBAR: Graph Editor ── -->
+  <div class="sidebar" id="sidebar-left">
+
+    <!-- Tools -->
+    <div class="panel">
+      <div class="panel-header"><span class="ph-icon">🔧</span> Graph Editor Tools</div>
+      <div class="panel-body">
+        <div class="tool-grid">
+          <div class="tool-btn active" id="tool-addnode" onclick="setTool('addnode')">
+            <div class="tool-icon">⊕</div><div>Add Node</div>
+          </div>
+          <div class="tool-btn" id="tool-addedge" onclick="setTool('addedge')">
+            <div class="tool-icon">↔</div><div>Add Edge</div>
+          </div>
+          <div class="tool-btn" id="tool-move" onclick="setTool('move')">
+            <div class="tool-icon">✥</div><div>Move</div>
+          </div>
+          <div class="tool-btn" id="tool-delete" onclick="setTool('delete')">
+            <div class="tool-icon">✕</div><div>Delete</div>
+          </div>
+          <div class="tool-btn" id="tool-weight" onclick="setTool('weight')">
+            <div class="tool-icon">⚖</div><div>Set Weight</div>
+          </div>
+          <div class="tool-btn" id="tool-select" onclick="setTool('select')">
+            <div class="tool-icon">◎</div><div>Src/Dst</div>
+          </div>
+        </div>
+        <div class="sep"></div>
+        <div class="field">
+          <label>Graph Type</label>
+          <select id="graph-type" onchange="toggleDirected()">
+            <option value="undirected">Undirected</option>
+            <option value="directed">Directed</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Default Edge Weight</label>
+          <input type="number" id="default-weight" value="1" min="1" max="999">
+        </div>
+      </div>
+    </div>
+
+    <!-- Edge controls -->
+    <div class="panel">
+      <div class="panel-header"><span class="ph-icon">⚙</span> Edge Controls</div>
+      <div class="panel-body">
+        <div class="field">
+          <label>From Node</label>
+          <select id="edge-from"><option value="">— select —</option></select>
+        </div>
+        <div class="field">
+          <label>To Node</label>
+          <select id="edge-to"><option value="">— select —</option></select>
+        </div>
+        <div class="field">
+          <label>Weight</label>
+          <input type="number" id="edge-weight-input" value="5" step="1">
+        </div>
+        <div class="btn-row">
+          <button class="btn success full" onclick="addEdgeFromForm()">＋ Add Edge</button>
+        </div>
+        <div class="btn-row">
+          <button class="btn full" onclick="removeEdgeFromForm()">− Remove Edge</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Graph actions -->
+    <div class="panel">
+      <div class="panel-header"><span class="ph-icon">📐</span> Graph Actions</div>
+      <div class="panel-body">
+        <div class="btn-row">
+          <button class="btn" onclick="addNodeBtn()">⊕ Node</button>
+          <button class="btn danger" onclick="clearGraph()">⊘ Clear</button>
+        </div>
+        <div class="sep"></div>
+        <div style="font-size:.65rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:.4rem">Sample Graphs</div>
+        <div class="scenario-grid">
+          <div class="scenario-chip" data-sample="basic" role="button" tabindex="0" onclick="loadSample('basic')">
+            <span class="sc-name">Basic 6-Node</span>positive weights
+          </div>
+          <div class="scenario-chip" data-sample="negative" role="button" tabindex="0" onclick="loadSample('negative')">
+            <span class="sc-name">Negative Edges</span>BF vs Dijkstra
+          </div>
+          <div class="scenario-chip" data-sample="negcycle" role="button" tabindex="0" onclick="loadSample('negcycle')">
+            <span class="sc-name">Neg. Cycle</span>cycle detection
+          </div>
+          <div class="scenario-chip" data-sample="medium" role="button" tabindex="0" onclick="loadSample('medium')">
+            <span class="sc-name">Medium (12)</span>performance test
+          </div>
+          <div class="scenario-chip" data-sample="large" role="button" tabindex="0" onclick="loadSample('large')">
+            <span class="sc-name">Large (20)</span>scaling analysis
+          </div>
+          <div class="scenario-chip" data-sample="failure" role="button" tabindex="0" onclick="loadSample('failure')">
+            <span class="sc-name">Link Failure</span>route adapt
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Graph info -->
+    <div class="panel">
+      <div class="panel-header"><span class="ph-icon">📊</span> Graph Info</div>
+      <div class="panel-body">
+        <table class="dist-table" style="font-size:.7rem">
+          <tr><td style="color:var(--muted)">Nodes</td><td id="info-nodes">0</td></tr>
+          <tr><td style="color:var(--muted)">Edges</td><td id="info-edges">0</td></tr>
+          <tr><td style="color:var(--muted)">Type</td><td id="info-type">Undirected</td></tr>
+          <tr><td style="color:var(--muted)">Neg. Weights</td><td id="info-neg">No</td></tr>
+          <tr><td style="color:var(--muted)">Source</td><td id="info-src">—</td></tr>
+          <tr><td style="color:var(--muted)">Target</td><td id="info-dst">—</td></tr>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- end left sidebar -->
+
+  <!-- ── CANVAS ── -->
+  <div id="canvas-area">
+    <canvas id="graph-canvas"></canvas>
+
+    <div id="canvas-toolbar">
+      <button class="ct-btn" title="Zoom In" onclick="zoom(1.2)">+</button>
+      <button class="ct-btn" title="Zoom Out" onclick="zoom(0.833)">−</button>
+      <button class="ct-btn" title="Fit Graph" onclick="fitGraph()" style="font-size:.7rem">FIT</button>
+      <div class="ct-sep"></div>
+      <button class="ct-btn" title="Grid toggle" onclick="toggleGrid()" id="grid-btn">⊞</button>
+    </div>
+
+    <div id="canvas-hint">Click canvas to add nodes · Select tool to set source/destination</div>
+
+    <!-- Player bar -->
+    <div id="player-bar" style="display:none">
+      <button class="player-btn" title="Go to start" onclick="stepGo(0)">⏮</button>
+      <button class="player-btn" title="Step back" onclick="stepBack()" id="btn-stepback">◀</button>
+      <button class="player-btn play-btn" title="Play/Pause" onclick="togglePlay()" id="btn-play">▶</button>
+      <button class="player-btn" title="Step forward" onclick="stepForward()" id="btn-stepfwd">▶|</button>
+      <button class="player-btn" title="Go to end" onclick="stepGo(-1)">⏭</button>
+      <span id="step-counter">0 / 0</span>
+      <div class="speed-label">Speed</div>
+      <input type="range" id="speed-slider" min="1" max="10" value="5">
+      <button class="player-btn" title="Stop" onclick="stopAlgo()" style="color:var(--red)">■</button>
+    </div>
+
+  </div><!-- end canvas area -->
+
+  <!-- ── RIGHT SIDEBAR: Algorithm + Results ── -->
+  <div class="sidebar" id="sidebar-right">
+
+    <!-- Algorithm selector -->
+    <div class="panel">
+      <div class="panel-header"><span class="ph-icon">🧮</span> Algorithm</div>
+      <div class="panel-body">
+        <div class="btn-row">
+          <button class="btn active full" id="algo-dijk" onclick="selectAlgo('dijkstra')">Dijkstra</button>
+          <button class="btn full" id="algo-bf" onclick="selectAlgo('bellman-ford')">Bellman-Ford</button>
+        </div>
+        <div class="btn-row">
+          <button class="btn full" id="algo-compare" onclick="runComparison()">⇄ Compare Both</button>
+        </div>
+        <div class="btn-row">
+          <button class="btn success full" onclick="verifyWithPython()">✓ Verify with Python</button>
+        </div>
+        <div id="verify-status" style="font-size:.72rem;color:var(--muted);margin-bottom:.45rem;line-height:1.35">
+          Python verification: not run
+        </div>
+        <div class="sep"></div>
+        <div class="field">
+          <label>Source Node</label>
+          <select id="src-select" onchange="setSource(this.value)"><option value="">— none —</option></select>
+        </div>
+        <div class="field">
+          <label>Target Node (optional)</label>
+          <select id="dst-select" onchange="setTarget(this.value)"><option value="">— all nodes —</option></select>
+        </div>
+        <div class="btn-row">
+          <button class="btn primary full" onclick="runAlgorithm()">▶ Run Algorithm</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step info -->
+    <div class="panel">
+      <div class="panel-header"><span class="ph-icon">📝</span> Step Information</div>
+      <div class="panel-body">
+        <div class="step-box" id="step-info">
+          <div class="step-num">Status</div>
+          <span style="color:var(--muted)">Select source node and run algorithm to begin.</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" id="step-progress" style="width:0%"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabs: Distances | Results | Compare -->
+    <div class="panel" style="flex:1">
+      <div class="tabs">
+        <div class="tab active" id="tab-dist"    onclick="switchTab('dist')">Distances</div>
+        <div class="tab"       id="tab-results"  onclick="switchTab('results')">Results</div>
+        <div class="tab"       id="tab-compare"  onclick="switchTab('compare')">Compare</div>
+      </div>
+
+      <!-- Distances tab -->
+      <div class="tab-content active" id="tc-dist">
+        <div style="overflow-x:auto">
+          <table class="dist-table" id="dist-table">
+            <thead>
+              <tr>
+                <th>Node</th>
+                <th>Distance</th>
+                <th>Via</th>
+                <th>State</th>
+              </tr>
+            </thead>
+            <tbody id="dist-tbody">
+              <tr><td colspan="4" style="color:var(--dim);text-align:center;padding:.5rem">No data</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Results tab -->
+      <div class="tab-content" id="tc-results">
+        <div id="results-area">
+          <div style="color:var(--dim);font-size:.75rem">Run an algorithm to see results.</div>
+        </div>
+      </div>
+
+      <!-- Compare tab -->
+      <div class="tab-content" id="tc-compare">
+        <div id="compare-area">
+          <div style="color:var(--dim);font-size:.75rem">Run comparison to see data.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Log -->
+    <div class="panel">
+      <div class="panel-header"><span class="ph-icon">📋</span> Event Log</div>
+      <div class="panel-body">
+        <div class="log-area" id="log-area">
+          <div class="log-entry info">NetRoute initialized. Load a sample graph or start drawing.</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end right sidebar -->
+</div><!-- end app -->
+
+<!-- ── Tooltip ── -->
+<div id="tooltip"></div>
+
+<!-- ── Notification ── -->
+<div id="notif"></div>
+
+<!-- ── Modal ── -->
+<div id="modal-overlay">
+  <div id="modal">
+    <div class="modal-title" id="modal-title">Enter Value</div>
+    <div id="modal-body"></div>
+    <div class="modal-btns">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn primary" id="modal-ok" onclick="confirmModal()">OK</button>
+    </div>
+  </div>
+</div>
+
+<script src="netroute.js"></script>
+</body>
+</html>
